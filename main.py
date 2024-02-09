@@ -3,11 +3,12 @@ from sklearn.model_selection import train_test_split
 from wordcloud import WordCloud, STOPWORDS
 from sklearn.metrics import accuracy_score
 from nltk.corpus import stopwords
+from sklearn.preprocessing import LabelEncoder
+
 df = pd.read_csv("Reddit_Data.csv")
 df.rename({'clean_comment':'clean_text'}, axis=1, inplace=True)
 df.dropna(inplace=True)
 df.drop_duplicates(inplace=True)
-df["clean_text"] = df["clean_text"].apply(text_cleaning)
 
 X=pd.get_dummies(df)
 y=df["category"]
@@ -33,10 +34,21 @@ def text_cleaning(text):
     text = ' '.join([word for word in text.split() if word not in stopwords.words("english")])
     return text
 
+# df["clean_text"] = df["clean_text"].apply(text_cleaning)
 
-print(df['clean_comment'])
+print(df['clean_text'])
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2)
+mapping = {0: 'Neutral', 1: 'Positive', -1: 'Negative'}
+df['category'] = df['category'].map(mapping)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42)
+
+label_encoder = LabelEncoder()
+y_train = label_encoder.fit_transform(y_train)
+y_test = label_encoder.transform(y_test)
+
+
+
 
 
 
