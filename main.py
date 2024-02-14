@@ -1,9 +1,18 @@
 import pandas as pd
+import numpy as np
+
 from sklearn.model_selection import train_test_split
 from wordcloud import WordCloud, STOPWORDS
 from sklearn.metrics import accuracy_score
 from nltk.corpus import stopwords
 from sklearn.preprocessing import LabelEncoder
+from keras.preprocessing.text import Tokenizer
+import tensorflow as tf
+import pickle
+from keras.models import Sequential
+from keras.layers import Embedding, LSTM, Dense, Dropout
+from sklearn.metrics import f1_score, precision_score, recall_score
+
 
 df = pd.read_csv("Reddit_Data.csv")
 df.rename({'clean_comment':'clean_text'}, axis=1, inplace=True)
@@ -12,6 +21,7 @@ df.drop_duplicates(inplace=True)
 
 X=pd.get_dummies(df)
 y=df["category"]
+y = tf.stack(y)
 
 
 # Preprocessing
@@ -34,42 +44,63 @@ def text_cleaning(text):
     text = ' '.join([word for word in text.split() if word not in stopwords.words("english")])
     return text
 
-# df["clean_text"] = df["clean_text"].apply(text_cleaning)
+df["clean_text"] = df["clean_text"].apply(text_cleaning)
 
 print(df['clean_text'])
 
 mapping = {0: 'Neutral', 1: 'Positive', -1: 'Negative'}
 df['category'] = df['category'].map(mapping)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(df['clean_text'], df['category'], test_size=0.2, random_state=42)
 
 label_encoder = LabelEncoder()
 y_train = label_encoder.fit_transform(y_train)
 y_test = label_encoder.transform(y_test)
 
+class_mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
+print("Class Mapping:")
+for class_label, encoded_value in class_mapping.items():
+    print(f"{class_label}: {encoded_value}")
+    
+max_words = 10000  
+max_sequence_length = 100  
+tokenizer = Tokenizer(num_words=max_words)
+tokenizer.fit_on_texts(X_train)
+X_train_sequence = tokenizer.texts_to_sequences(X_train)
+X_test_sequence = tokenizer.texts_to_sequences(X_test)
+X_train_padded = tf.keras.preprocessing.sequence.pad_sequences(X_train_sequence, maxlen=max_sequence_length)
+X_test_padded = tf.keras.preprocessing.sequence.pad_sequences(X_test_sequence, maxlen=max_sequence_length)
+# Saving the tokenizer for future use
+tokenizer_filename = 'tokenizer.pkl'
+with open(tokenizer_filename, 'wb') as tokenizer_file:
+    pickle.dump(tokenizer, tokenizer_file)
 
 
+# Hyperparameters
+embedding_dim = 100
+batch_size = 64
+epochs = 10
+
+model = Sequential()
+model.add(Embedding(max_words, embedding_dim, input_length=max_sequence_length))
+model.add(LSTM(100))
+model.add(Dropout(0.5))
+model.add(Dense(3, activation='softmax'))
 
 
-
-
-
-
-
-
-# # remove stopwords
-
-# import nltk
-# nltk.download('stopwords')
-# from nltk.corpus import stopwords
-
-# stop = set(stopwords.words("english"))
-
-# def remove_stopwords(text):
-#     filtered_words = [word.lower() for word in text.split() if word.lower() not in stop]
-#     return " ".join(filtered_words)
-
-# df['clean_comment'] = df['clean_comment'].fillna(df.mean()['clean_comment'])
-# df["clean_comment"] = df.clean_comment.map(remove_stopwords)
-# print(df.clean_comment)
-
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history = model.fit(X_train_padded, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
+# Evaluation on Test data
+test_loss, test_accuracy = model.evaluate(X_test_padded, y_test, verbose=1)
+print(f'Test Loss: {test_loss:.4f}')
+print(f'Test Accuracy: {test_accuracy:.4f}')
+# Predictions on Test data
+y_test_pred = model.predict(X_test_padded)
+y_test_pred_classes = np.argmax(y_test_pred, axis=1)
+# Calculate additional metrics
+f1 = f1_score(y_test, y_test_pred_classes, average='weighted')
+precision = precision_score(y_test, y_test_pred_classes, average='weighted')
+recall = recall_score(y_test, y_test_pred_classes, average='weighted')
+print(f'F1 Score: {f1:.4f}')
+print(f'Precision: {precision:.4f}')
+print(f'Recall: {recall:.4f}')
