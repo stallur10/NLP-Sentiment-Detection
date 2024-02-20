@@ -12,7 +12,7 @@ import pickle
 from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Dense, Dropout
 from sklearn.metrics import f1_score, precision_score, recall_score
-
+import matplotlib.pyplot as plt
 
 df = pd.read_csv("Reddit_Data.csv")
 df.rename({'clean_comment':'clean_text'}, axis=1, inplace=True)
@@ -79,7 +79,7 @@ with open(tokenizer_filename, 'wb') as tokenizer_file:
 # Hyperparameters
 embedding_dim = 100
 batch_size = 64
-epochs = 10
+epochs = 18
 
 model = Sequential()
 model.add(Embedding(max_words, embedding_dim, input_length=max_sequence_length))
@@ -104,3 +104,26 @@ recall = recall_score(y_test, y_test_pred_classes, average='weighted')
 print(f'F1 Score: {f1:.4f}')
 print(f'Precision: {precision:.4f}')
 print(f'Recall: {recall:.4f}')
+
+model.save('C:\\Users\\User\\OneDrive\\Desktop\\Stock-Screener\\savedModel')
+
+# Plotting training and testing curves
+default_size = plt.rcParams['figure.figsize']
+fig = plt.figure(figsize=[default_size[0] * 2, default_size[1]])
+
+fig.add_subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label = 'accuracy')         
+plt.plot(history.history['val_accuracy'], label = 'val_accuracy')  
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Accuracy')
+plt.legend(loc='lower right')
+
+fig.add_subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='loss')         
+plt.plot(history.history['val_loss'], label='val_loss')  
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Loss')
+plt.legend(loc='upper right')
+plt.show()
