@@ -96,6 +96,7 @@ print(f'Test Loss: {test_loss:.4f}')
 print(f'Test Accuracy: {test_accuracy:.4f}')
 # Predictions on Test data
 y_test_pred = model.predict(X_test_padded)
+print(f'Y-hat: {y_test_pred:.4f}')
 y_test_pred_classes = np.argmax(y_test_pred, axis=1)
 # Calculate additional metrics
 f1 = f1_score(y_test, y_test_pred_classes, average='weighted')
