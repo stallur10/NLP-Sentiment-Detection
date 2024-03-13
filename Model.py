@@ -14,7 +14,7 @@ from keras.layers import Embedding, LSTM, Dense, Dropout
 from sklearn.metrics import f1_score, precision_score, recall_score
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("Reddit_Data.csv")
+df = pd.read_csv("Twitter_Data.csv")
 df.rename({'clean_comment':'clean_text'}, axis=1, inplace=True)
 df.dropna(inplace=True)
 df.drop_duplicates(inplace=True)
@@ -79,7 +79,7 @@ with open(tokenizer_filename, 'wb') as tokenizer_file:
 # Hyperparameters
 embedding_dim = 100
 batch_size = 64
-epochs = 18
+epochs = 10
 
 model = Sequential()
 model.add(Embedding(max_words, embedding_dim, input_length=max_sequence_length))
@@ -106,7 +106,7 @@ print(f'F1 Score: {f1:.4f}')
 print(f'Precision: {precision:.4f}')
 print(f'Recall: {recall:.4f}')
 
-model.save('C:\\Users\\User\\OneDrive\\Desktop\\Stock-Screener\\savedModel')
+model.save('C:\\Users\\User\\OneDrive\\Desktop\\Stock-Screener\\savedModelTwitter')
 
 # Plotting training and testing curves
 default_size = plt.rcParams['figure.figsize']
