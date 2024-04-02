@@ -79,7 +79,7 @@ with open(tokenizer_filename, 'wb') as tokenizer_file:
 # Hyperparameters
 embedding_dim = 100
 batch_size = 64
-epochs = 10
+epochs = 5
 
 model = Sequential()
 model.add(Embedding(max_words, embedding_dim, input_length=max_sequence_length))
